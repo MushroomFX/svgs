@@ -1,0 +1,71 @@
+<div id="file-list"></div>
+
+<script>
+const owner = 'mushroomfx';
+const repo = 'svgs';
+
+const files = {};
+
+const fetchFiles = async (path = '', parent = files) => {
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            try {
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const data = await response.json();
+
+                if (Array.isArray(data)) {
+                    for (const item of data) {
+                        if (item.type === 'file') {
+                            parent[item.name] = 'file';
+                        } else if (item.type === 'dir') {
+                            parent[item.name] = {};
+                            await fetchFiles(item.path, parent[item.name]); // Recursively fetch subfolders
+                        }
+                    }
+                } else {
+                    console.error('Unexpected response data:', data);
+                }
+            } catch (error) {
+                console.error('Error fetching file list:', error);
+            }
+        };
+
+        const displayFiles = () => {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = ""
+            Object.keys(files).forEach((file)=>{
+                const folders = files[file]
+                if(folders!=="file"){
+                    fileList.innerHTML += `
+                    <div id="folder_${file}">
+                        <h1>${file}</h1>
+                        <div class="folderFileList"></div>
+                    </div>`
+                    Object.keys(folders).forEach((subFile)=>{
+                        document.querySelector(`#folder_${file} > .folderFileList`).innerHTML += `
+                        <img src="./${file}/${subFile}">
+                        `
+                    })
+                }
+            })
+        };
+
+        // Fetch files and display them
+        fetchFiles().then(displayFiles);
+
+</script>
+
+<style>
+  .folderFileList {
+  display: grid; 
+  grid-auto-columns: 1fr; 
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr; 
+  grid-template-rows: 1fr; 
+  gap: 0px 0px; 
+  grid-template-areas: 
+    ". . . . ."; 
+}
+</style>
